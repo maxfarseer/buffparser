@@ -9,6 +9,7 @@
     "express": "3.4.1",
     "jade": "*",
     "jsdom": "0.8.8",
-    "version": "2.27.0"
+    "version": "2.27.0",
+    "async": "~0.2.9"
   }
 }

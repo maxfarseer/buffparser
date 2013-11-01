@@ -1,5 +1,5 @@
 module.exports = function(app) {
 
-	app.get('/', require('./root').get);
+	app.get('/heroes/:id', require('./root').get);
 
 }
