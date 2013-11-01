@@ -12,78 +12,62 @@ var heroes = {};
 exports.get = function(req, res, next) {
 	var playerID = +req.params.id;
 	var ids = [];
-	var games =[];
-	console.log(playerID);
-
-	/*dota.getByAccountID(playerID, function (err, result) {
-		if (err) {
-			console.log('err: ' + err);
-		}
-
-		// вытащить из последней сотни, героев за которых играл
-		result.matches.forEach(function(val, index, array) {
-			//console.log(val.match_id + ' bots ' + val.players.length + ' - ' + index + ' / ' + array.length);
-			val.players.forEach(function(player) {
-				if (player.account_id === playerID) {
-					//console.log(player.hero_id);
-					dota.getHeroes(function (err, heroesArray) {
-						heroesArray.heroes.forEach(function(heroName) {
-							//console.log(val.id + ' - ' + val.localized_name);
-							if (player.hero_id === heroName.id) {
-								res.write(heroName.localized_name+'\n');
-							}
-						});
-					});
-				};
-			});
-		});
-
-		//get match details
-		//res.json(result.matches);
-
-	});*/
-
-
-	function parseMatch(match) {
-		ids.push(match.match_id);
+	var last100matches = [];
+	var allPlayers = [];
+	var playerInfo = {
+		damage: 0
 	};
+	var matches = [11,22,31];
 
-	function parseMatchDetails(match_id) {
-		dota.getMatchDetails(match_id, function(err, result) {
-			console.log(result);
-		});
-	};
-
-	// get herolist with async
+	
 	async.waterfall([
-		function getMatches(callback) {
+		function getHuet(callback) {
 			dota.getByAccountID(playerID, function (err, result) {
-				callback(err,result);
+
+				if (err) {
+					console.log('err: ' + err);
+				}
+				
+				result.matches.forEach(function (match) {
+					console.log(match);
+					last100matches.push(match.match_id)
+				});
 			});
-		},
-		function getGamesID(result, callback) {
-			async.each(result.matches, parseMatch, callback(null, ids));
-		},
-		function getMatchInfo(ids, callback) {
-			async.each(ids, parseMatchDetails, callback(null, games));
-		},
-		function printMatches(games, callback) {
-			console.log(games);
+
+			console.log(last100matches);
 		}
-		/*function findPlayer(value, callback) {
-			console.log(value);
-			if (playerName === playerID) {
-				ids.push(playerName.hero_id);
-			}
-		}*/
-	], function (err, result) {
-			console.log('done');
+
+	], function(err, result) {
+		console.log(result);
 	});
 
-	/*dota.getMatchDetails(362782339, function(err, result) {
-		res.json(result);
-	});*/
 
-	//res.end('rdy');
+
+	
+
+	console.log(last100matches);
+
+	//last100matches.forEach(singleMatchInfo);
+
+	function singleMatchInfo(match) {
+		dota.getMatchDetails(311581500, function(err, matchDetails) {
+			console.log(matchDetails);
+		});
+	};
+
+
+/*		allPlayers.forEach(currentPlayerInfo);
+
+		function currentPlayerInfo(player) {
+			console.log(player);
+		};*/
+
+		// вытащить из последней сотни весь дамаг
+		/*dota.getMatchDetails(result.match_id, function(err, matchDetails) {
+			console.log(matchDetails);
+		});
+			*/
+
+	res.end('rdy');
 	
 };
