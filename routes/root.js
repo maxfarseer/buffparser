@@ -2,6 +2,7 @@ var async = require('async');
 var Dota2Api = require('dota2api');
 var dota = new Dota2Api('2F1B42CFCAE0A920E6293AED04EE4F54');
 //http://steamidfinder.ru/
+//https://api.steampowered.com/IDOTA2Match_570/GetMatchDetails/V001/?match_id=27110133&key=2F1B42CFCAE0A920E6293AED04EE4F54&account_id=43880654
 //43880654 - Nemes
 //45307627 - Kerza
 //20187002 - Max (x)
@@ -9,64 +10,99 @@ var dota = new Dota2Api('2F1B42CFCAE0A920E6293AED04EE4F54');
 //45659957 - Толян
 var heroes = {};
 
+var spawn = require('child_process').spawn;
+
 exports.get = function(req, res, next) {
 	var playerID = +req.params.id;
-	var ids = [];
-	var last100matches = [];
-	var allPlayers = [];
+	var playerCounter = [];
 	var playerInfo = {
-		damage: 0
+		kills: [],
+		deaths: [],
+		assists: [],
+		last_hits: [],
+		denies: [],
+		hero_damage: [],
+		hero_healing: [],
+		gold_spent: [],
+		kills_number: 0,
+		deaths_number: 0,
+		assists_number: 0
 	};
-	var matches = [11,22,31];
 
-	
 	async.waterfall([
-		function getHuet(callback) {
+
+		function getDota2Json(callback) {
 			dota.getByAccountID(playerID, function (err, result) {
-
-				if (err) {
-					console.log('err: ' + err);
-				}
-				
-				result.matches.forEach(function (match) {
-					console.log(match);
-					last100matches.push(match.match_id)
-				});
+				callback(err, result);
 			});
-
-			console.log(last100matches);
+		},
+		function getMatches(result, callback) {
+			result.matches.forEach(function (match) {
+				callback(null, match.match_id);
+			});
+		},
+		function getMatchInfo(matchID, callback) {
+			dota.getMatchDetails(matchID, function (err, result) {
+				callback(err, result.players);
+			});
+		},
+		function getCurrentPlayer(players, callback) {
+			players.forEach(function (player) {
+				if (player.account_id === playerID) {
+					callback(null, player);
+				}
+			});
+		},
+		function getDamage(player, callback) {
+			callback(null,
+					player.kills,
+					player.deaths,
+					player.assists,
+					player.last_hits,
+					player.denies,
+					player.hero_damage,
+					player.hero_healing,
+					player.gold_spent,
+					'1');
 		}
+	], function (err, kills, deaths, assists, last_hits, denies, hero_damage, hero_healing, gold_spent, counter) {
+		playerCounter.push(counter);
 
-	], function(err, result) {
-		console.log(result);
+		playerInfo.kills.push(kills);
+		playerInfo.deaths.push(deaths);
+		playerInfo.assists.push(assists);
+
+		console.log(playerCounter.length);
+		
+		if (playerCounter.length === 100) {
+
+			playerInfo.kills.forEach(function (val) {
+				playerInfo.kills_number += val;
+			});
+			console.log('Last 100 K ' + playerInfo.kills_number);
+
+			playerInfo.deaths.forEach(function (val) {
+				playerInfo.deaths_number += val;
+			});
+			console.log('Last 100 D ' + playerInfo.deaths_number);
+
+			playerInfo.assists.forEach(function (val) {
+				playerInfo.assists_number += val;
+			});
+			console.log('Last 100 A ' + playerInfo.assists_number);
+
+			var magickOpts = [
+				"ursa2.jpg",
+				"-font", "Waree-bold",
+				"-pointsize", "25",
+				"-fill", "white",
+				"-gravity", "South",
+				"-annotate", "+0+2", "LAST 100 K/D/A: " + playerInfo.kills_number + "/" + playerInfo.deaths_number + "/" + playerInfo.assists_number,
+				""+playerID+".png"
+			];
+			var im = spawn('convert', magickOpts);
+		}
 	});
-
-
-
-	
-
-	console.log(last100matches);
-
-	//last100matches.forEach(singleMatchInfo);
-
-	function singleMatchInfo(match) {
-		dota.getMatchDetails(311581500, function(err, matchDetails) {
-			console.log(matchDetails);
-		});
-	};
-
-
-/*		allPlayers.forEach(currentPlayerInfo);
-
-		function currentPlayerInfo(player) {
-			console.log(player);
-		};*/
-
-		// вытащить из последней сотни весь дамаг
-		/*dota.getMatchDetails(result.match_id, function(err, matchDetails) {
-			console.log(matchDetails);
-		});
-			*/
 
 	res.end('rdy');
 	
